@@ -1,4 +1,6 @@
-default = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+from constants import *
+
+default = DEFAULT
 
 class FEN:
     def __init__(self, FEN):
