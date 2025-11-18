@@ -3,6 +3,8 @@ import sys
 
 from constants import *
 from graphics.graphics import *
+from data_functions import *
+from data_storage import *
 
 pygame.init()
 pygame.font.init()
@@ -16,18 +18,15 @@ def main():
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     clock = pygame.time.Clock()
 
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                return
-            
-        screen.fill((0,0,0))
-        draw_board(screen)
+    game_data, position_list = fen_to_board_obj(DEFAULT)
+    exit = False
 
-        starting_game_data, starting_piece_list = fen_to_board_obj(TEST_FEN)
-        place_pieces(screen, starting_piece_list)
-        pygame.display.flip()
-        clock.tick(60)
+    while True:
+        if exit == True:
+            return
+
+        game_data, position_list, exit = text_move(game_data, position_list, screen)
+        
 
 if __name__ == "__main__":
     main()

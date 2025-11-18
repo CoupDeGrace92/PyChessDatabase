@@ -3,27 +3,14 @@ import sys
 
 from constants import *
 from graphics.graphics import *
-
-pygame.init()
-pygame.font.init()
-font = pygame.font.SysFont(None, 32)
+from example_pgn import *
+from data_functions import *
+from data_storage import *
 
 def main():
-    print("Initializing Chess Board")
-    print(f"Screen width:{SCREEN_WIDTH}")
-    print(f"Screen height:{SCREEN_HEIGHT}")
-
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    clock = pygame.time.Clock()
-
-    game_data, position_list = fen_to_board_obj(DEFAULT)
-    exit = False
-
-    while True:
-        if exit == True:
-            return
-
-        game_data, position_list, exit = text_move(game_data, position_list, screen)
+    move_list, fen = pgn_to_move_list(example_pgn)
+    print(move_list)
+    print(fen)
         
 
 if __name__ == "__main__":
