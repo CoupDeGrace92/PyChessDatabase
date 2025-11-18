@@ -104,7 +104,7 @@ class Piece:
                         for piece in piece_list:
                             if piece.location == (x,y):
                                 if piece.color != self.color:
-                                    move_list.append(i.location)
+                                    move_list.append(self.location)
                                 blocked = True
                                 break
                         if blocked:
@@ -162,7 +162,7 @@ class Piece:
                         for piece in piece_list:
                             if piece.location == (x,y):
                                 if piece.color != self.color:
-                                    move_list.append(i.location)
+                                    move_list.append(self.location)
                                 blocked = True
                                 break
                         if blocked:

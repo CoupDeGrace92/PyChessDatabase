@@ -16,8 +16,9 @@ def fen_to_board_obj(fen):
     current_game = GameState(None, None)
     for i in fen_list[0]:  #This is the piece location part of the FEN string
         if i in PieceType.__members__:
-            color, piece = piece_enum_splitter(PieceType.__members__[i].value)
-            piece_list.append(Piece(piece, color, (file, rank)))
+            enum_piece = PieceType[i]          # the Enum member
+            color = 'white' if i.isupper() else 'black'
+            piece_list.append(Piece(enum_piece, color, (file, rank)))
             file += 1
         elif i=="/":
             rank -= 1
@@ -33,7 +34,7 @@ def fen_to_board_obj(fen):
     else:
         raise Exception(f"Unrecognized character in fen string player turn: {fen_list[2]}")
     if fen_list[2] == '-':
-        current_game.castling = None
+        current_game.castling = ''
     else:
         current_game.castling = fen_list[2]
     if fen_list[3] == '-':
@@ -41,9 +42,9 @@ def fen_to_board_obj(fen):
     else:
         current_game.ep_square = fen_list[3]
     if fen_list[4]:
-        current_game.halfmove = fen_list[4]
+        current_game.halfmove = int(fen_list[4])
     if fen_list[5]:
-        current_game.fullmove = fen_list[5]
+        current_game.fullmove = int(fen_list[5])
     
     return current_game, piece_list
         
@@ -106,7 +107,7 @@ def legal_moves(game_state, piece_list):
         dest_list = piece.get_moves(game_state, to_move_piece_list)
         for move_dest in dest_list:
             source = piece.location
-            castling = None
+            castling = ''
             ep = False
             capture = False
             promotion = None
@@ -185,10 +186,6 @@ def legal_moves(game_state, piece_list):
         if legal == True:
             move_list.append(move)
     return move_list
-
-                        
-
-
 
 
 def move(game_state, position_list, source, destination, castling, ep, capture, promotion):  #Note that promotion is a PieceType Enum
@@ -306,121 +303,176 @@ def move(game_state, position_list, source, destination, castling, ep, capture, 
     game_state.castling = castling_string
     return game_state, position_list
 
-'''
-def move_fen(game_state, piece_list, algebraic):
-    player = game_state.player_turn
+def algebraic_to_move(algebraic, game_state, position_list):
+    source = None
+    destination = None
+    castling = ''
+    ep = False
+    capture = False
+    promotion = None
+
+
+    algebraic = algebraic.strip()
+    algebraic = algebraic.strip('+#')
+
     if algebraic == '0-0-0':
-        if player == 'white':
-            for i in piece_list:
-                if i.piece == PieceType.K:
-                    king = i
-                    king.location = (3,1)
-                if i.piece == PieceType.R and i.location == (1,1):
-                    rook = i
-                    rook.location = (4,1)
-            castling = game_state.castling
-            found = False
-            for i in range(0,len(castling)):
-                if castling[i].islower():
-                    found = True
-                    game_state.castling = castling[i:]
-                    break
-            if found == False:
-                game_state.castling = '-'
-        if player == 'black':
-            for i in piece_list:
-                if i.piece == PieceType.k:
-                    king = i
-                    king.location = (3,8)
-                if i.piece == PieceType.r and i.location == (1,8):
-                    rook = i
-                    rook.location = (4,8)
-            castling = game_state.castling
-            found = False
-            for i in range(0,len(castling)):
-                if castling[i].islower():
-                    found = True
-                    game_state.castling = castling[:i]
-                    if castling[:i] == '':
-                        castling = '-'
-                    break
-    if algebraic == '0-0':
-        if player == 'white':
-            for i in piece_list:
-                if i.piece == PieceType.K:
-                    king = i
-                    king.location = (7,1)
-                if i.piece == PieceType.R and i.location == (8,1):
-                    rook = i
-                    rook.location = (6,1)
-            castling = game_state.castling
-            found = False
-            for i in range(0,len(castling)):
-                if castling[i].islower():
-                    found = True
-                    game_state.castling = castling[i:]
-                    break
-            if found == False:
-                game_state.castling = '-'
-        if player == 'black':
-            for i in piece_list:
-                if i.piece == PieceType.k:
-                    king = i
-                    king.location = (7,8)
-                if i.piece == PieceType.r and i.location == (8,8):
-                    rook = i
-                    rook.location = (6,8)
-            castling = game_state.castling
-            found = False
-            for i in range(0,len(castling)):
-                if castling[i].islower():
-                    found = True
-                    game_state.castling = castling[:i]
-                    if castling[:i] == '':
-                        castling = '-'
-                    break
-    #Search for e.p. - we can remove e.p. from the string since it has no bearing for us:
-    algebraic = re.sub('e.p.', '', algebraic)
-    
-    #Search for + or # and remove them
-    algebraic = re.sub('#', '', algebraic)
-    algebraic = re.sub('+', ' ', algebraic)
-
-    #Search for promotion:
-    promotion = False
-    if re.search('=', algebraic):
-        promotion = True    
-        promotion_string = re.split('=', algebraic)
-        algebraic = promotion_string[0]
-        promotion_piece = promotion_string[1]
-        promotion_piece = PieceType(promotion_piece)
-        promotion_piece = promotion_piece.value.split(' ')[1]
-
-    #Handle Captures:
-    if re.search('x', algebraic):
-        capture_string = re.split('x', algebraic)
-        capture_from = capture_string[0]
-        capture_location = capture_string[1]
-        capture_location = square_to_touple(capture_location)
-        for i in piece_list:
-            if i.location == capture_location:
-                del i
-
-
-    #Game State updates
-    if promotion == True:
-        promotion_square = square_to_touple(algebraic[-2:])#MAKE SURE WE HAVE STRIPPED OUT + and # symbols and any other extrenious symbols
-        for i in piece_list:
-            if i.location == promotion_square:
-                i.piece = promotion_piece
-    if player == 'black':
-        game_state.player_turn = 'white'
-        game_state.fullmove += 1
+        if game_state.player_turn == 'white':
+            castling = 'Q'
+            source = (5,1)
+            destination = (3,1)
+        else:
+            castling = 'q'
+            source = (5,8)
+            destination = (3,8)
+    elif algebraic == '0-0':
+        if game_state.player_turn == 'white':
+            castling = 'K'
+            source = (5,1)
+            destination = (7,1)
+        else:
+            castling = 'k'
+            source = (5,8)
+            destination = (7,8)
     else:
-        game_state.player_turn = 'black'
-    
-    game_state.halfmove = 1 % (game_state.halfmove+1)
+        if re.search('=', algebraic):
+            algebraic_list = algebraic.split('=')
+            algebraic = algebraic_list[0]
+            promotion = algebraic_list[1]
+            if game_state.player_turn == 'white':
+                promotion = promotion.upper()
+            if game_state.player_turn == 'black':
+                promotion = promotion.lower()
+            promotion = PieceType[promotion]
 
-    new_fen = board_obj_to_fen(piece_list, game_state)
-    return new_fen
-'''
+        if re.search('e.p.', algebraic):
+            ep = True
+            algebraic = algebraic.replace('e.p.', '')
+        if re.search('x', algebraic):
+            capture = True
+            algebraic = algebraic.replace('x', '')
+        if algebraic[0].islower():  #Dealing with a pawn move
+            if algebraic[1].isnumeric(): #Advance not capture
+                destination = (Files[algebraic[0]].value, int(algebraic[1]))
+                if int(algebraic[1]) == 4 and game_state.player_turn == 'white':
+                    one_square = False
+                    for p in position_list:
+                        if p.location == (Files[algebraic[0]].value,3):
+                            one_square = True
+                            break
+                    if one_square == True:
+                        source = (Files[algebraic[0]].value,3)
+                    else:
+                        source = (Files[algebraic[0]].value,2)
+                elif int(algebraic[1]) == 5 and game_state.player_turn == 'black':
+                    one_square = False
+                    for p in position_list:
+                        if p.location == (Files[algebraic[0]].value, 6):
+                            one_square = True
+                            break
+                    if one_square == True:
+                        source = (Files[algebraic[0]].value, 6)
+                    else:
+                        source = (Files[algebraic[0]].value, 7)
+                else:
+                    if game_state.player_turn == 'white':
+                        source = (Files[algebraic[0]].value, int(algebraic[1])-1)
+                    else:
+                        source = (Files[algebraic[0]].value, int(algebraic[1])+1)
+            else:
+                if game_state.player_turn == 'white':
+                    source = (Files[algebraic[0]].value, int(algebraic[2])-1)
+                else:
+                    source = (Files[algebraic[0]].value, int(algebraic[2])+1)
+                destination = (Files[algebraic[1]].value, int(algebraic[2]))
+        else:
+            if len(algebraic) == 3:
+                destination = (Files[algebraic[1]].value, int(algebraic[2]))
+                if game_state.player_turn == 'white':
+                    target_piece = PieceType[algebraic[0].upper()]
+                else:
+                    target_piece = PieceType[algebraic[0].lower()]
+                for p in position_list:
+                    if destination in p.get_moves(game_state, position_list) and p.piece == target_piece:
+                        psuedo_position = copy.deepcopy(position_list)
+                        psuedo_gamestate = copy.deepcopy(game_state)
+                        psuedo_gamestate, psuedo_position = move(psuedo_gamestate, psuedo_position, p.location, destination, castling, ep, capture, promotion)
+                        move_legal = True
+                        for piece in psuedo_position:
+                            if psuedo_gamestate.player_turn == 'white':
+                                if piece.piece == PieceType.k:
+                                    target_location = piece.location
+                                    break
+                            else:
+                                if piece.piece == PieceType.K:
+                                    target_location = piece.location
+                                    break
+                        for piece in psuedo_position:
+                            if psuedo_gamestate.player_turn == piece.color:
+                                if target_location in p.get_moves(psuedo_gamestate, psuedo_position):
+                                    move_legal = False
+                                    break
+                        if move_legal == True:
+                            source = p.location
+            
+            if len(algebraic) == 4:
+                if algebraic[1].isnumeric():
+                    destination = (Files[algebraic[2]].value, int(algebraic[3]))
+                    for p in position_list:
+                        if destination in p.get_moves(game_state, position_list) and p.location[1] == int(algebraic[1]) and p.piece == target_piece:
+                            psuedo_position = copy.deepcopy(position_list)
+                            psuedo_gamestate = copy.deepcopy(game_state)
+                            psuedo_gamestate, psuedo_position = move(psuedo_gamestate, psuedo_position, p.location, destination, castling, ep, capture, promotion)
+                            move_legal = True
+                            for piece in psuedo_position:
+                                if psuedo_gamestate.player_turn == 'white':
+                                    if piece.piece == PieceType.k:
+                                        target_location = piece.location
+                                        break
+                                else:
+                                    if piece.piece == PieceType.K:
+                                        target_location = piece.location
+                                        break
+                            for piece in psuedo_position:
+                                if psuedo_gamestate.player_turn == piece.color:
+                                    if target_location in p.get_moves(psuedo_gamestate, psuedo_position):
+                                        move_legal = False
+                                        break
+                            if move_legal == True:
+                                source = p.location
+                else:
+                    destination = (Files[algebraic[2]].value, int(algebraic[3]))
+                    for p in position_list:
+                        if destination in p.get_moves(game_state, position_list) and p.location[1] == Files[algebraic[1]].value and p.piece == target_piece:
+                            psuedo_position = copy.deepcopy(position_list)
+                            psuedo_gamestate = copy.deepcopy(game_state)
+                            psuedo_gamestate, psuedo_position = move(psuedo_gamestate, psuedo_position, p.location, destination, castling, ep, capture, promotion)
+                            move_legal = True
+                            for piece in psuedo_position:
+                                if psuedo_gamestate.player_turn == 'white':
+                                    if piece.piece == PieceType.k:
+                                        target_location = piece.location
+                                        break
+                                else:
+                                    if piece.piece == PieceType.K:
+                                        target_location = piece.location
+                                        break
+                            for piece in psuedo_position:
+                                if psuedo_gamestate.player_turn == piece.color:
+                                    if target_location in p.get_moves(psuedo_gamestate, psuedo_position):
+                                        move_legal = False
+                                        break
+                            if move_legal == True:
+                                source = p.location
+
+            if len(algebraic) == 5:
+                destination = (Files[algebraic[3]].value, int(algebraic[4]))
+                source = (Files[algebraic[1]].value, int(algebraic[2]))
+
+    return source, destination, castling, ep, capture, promotion
+
+                                
+
+def check_checkmate(game_state, position_list):
+    if legal_moves(game_state, position_list) == []:
+        return True
+    return False
