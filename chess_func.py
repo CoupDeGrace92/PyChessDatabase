@@ -118,10 +118,10 @@ def legal_moves(game_state, piece_list):
                     castling = 'Q'
             if piece.piece == PieceType.k:
                 if 'k' in game_state.castling and move_dest == (7,8):
-                    castling = 'K'
+                    castling = 'k'
             if piece.piece == PieceType.q:
                 if 'q' in game_state.castling and move_dest == (3,8):
-                    castling = 'Q'
+                    castling = 'q'
             if piece.piece == PieceType.P:
                 if move_dest == game_state.ep_square:
                     capture = True
@@ -152,6 +152,16 @@ def legal_moves(game_state, piece_list):
                 if king_sq in piece.get_moves(new_game_state, new_position) and piece.color == 'black':
                     legal = False
                     break
+                if castling == 'K':
+                    target_square = (6,1)
+                    if target_square in piece.get_moves(new_game_state, new_position) and piece.color == 'black':
+                        legal = False
+                        break
+                if castling == 'Q':
+                    target_square = (4,1)
+                    if target_square in piece.get_moves(new_game_state, new_position) and piece.color == 'black':
+                        legal = False
+                        break
 
         elif new_game_state.player_turn == 'white':
             king_sq = next((p.location for p in new_position if p.piece == PieceType.k), None)
@@ -161,6 +171,17 @@ def legal_moves(game_state, piece_list):
                 if king_sq in piece.get_moves(new_game_state, new_position) and piece.color == 'white':
                     legal = False
                     break
+                if castling == 'k':
+                    target_square = (6,8)
+                    if target_square in piece.get_moves(new_game_state, new_position) and piece.color == 'white':
+                        legal = False
+                        break
+                if castling == 'q':
+                    target_square = (4,8)
+                    if target_square in piece.get_moves(new_game_state, new_position) and piece.color == 'white':
+                        legal = False
+                        break
+
         if legal == True:
             move_list.append(move)
     return move_list
@@ -170,9 +191,120 @@ def legal_moves(game_state, piece_list):
 
 
 
-def move(game_state, position_list, source, destination, castling, ep, capture, promotion):
-    NotImplemented
-    #return game_state, piece_list
+def move(game_state, position_list, source, destination, castling, ep, capture, promotion):  #Note that promotion is a PieceType Enum
+    moved_piece = next((piece for piece in position_list if piece.location == source), None)
+    captured_piece = None
+    king_rook_move = False
+    queen_rook_move = False
+    king_rook_capture = False
+    queen_rook_capture = False
+
+    if moved_piece == None:
+        return None, None
+
+    if moved_piece.piece == PieceType.R and source == (1,1):
+        queen_rook_move = True
+    elif moved_piece.piece == PieceType.R and source == (8,1):
+        king_rook_move = True
+    elif moved_piece.piece == PieceType.r and source == (1,8):
+        queen_rook_move = True
+    elif moved_piece.piece == PieceType.r and source == (8,8):
+        king_rook_move = True
+
+    if capture == True:
+        captured_piece_location = destination
+        if ep == True:
+            if game_state.player_turn == 'white':
+                captured_piece_location = (destination[0], destination[1]-1)
+            else:
+                captured_piece_location = (destination[0], destination[1]+1)
+        captured_piece = next((piece for piece in position_list if piece.location == captured_piece_location), None)
+        if captured_piece.piece == PieceType.R:
+            if captured_piece.location == (1,1):
+                queen_rook_capture = True
+            if captured_piece.location == (8,1):
+                king_rook_capture = True
+        if captured_piece.piece == PieceType.r:
+            if captured_piece.location == (1,8):
+                queen_rook_capture = True
+            if captured_piece.location == (8,8):
+                king_rook_capture = True
+    if captured_piece:
+        position_list.remove(captured_piece)
+    moved_piece.location = destination
+    if promotion:
+        moved_piece.piece = promotion
+    if castling == 'k':
+        rook_to_move = next((piece for piece in position_list if piece.location == (8,8)), None)
+        if rook_to_move == None:
+            raise Exception('No rook to castle with')
+        rook_to_move.location = (6,8)
+    if castling == 'q':
+        rook_to_move = next((piece for piece in position_list if piece.location == (1,8)), None)
+        if rook_to_move == None:
+            raise Exception('No rook to castle with')
+        rook_to_move.location = (4,8)
+    if castling == 'K':
+        rook_to_move = next((piece for piece in position_list if piece.location == (8,1)), None)
+        if rook_to_move == None:
+            raise Exception('No rook to castle with')
+        rook_to_move.location = (6,1)
+    if castling == 'Q':
+        rook_to_move = next((piece for piece in position_list if piece.location == (1,1)), None)
+        if rook_to_move == None:
+            raise Exception('No rook to castle with')
+        rook_to_move.location = (4,1)
+    
+    game_state.ep_square = None
+    if moved_piece.piece == PieceType.P:
+        if destination[1]-source[1] == 2:
+            game_state.ep_square = (destination[0], destination[1]-1)
+    elif moved_piece.piece == PieceType.p:
+        if source[1] - destination[1] == 2:
+            game_state.ep_square = (destination[0], destination[1]+1)
+    
+    if game_state.player_turn == 'black':
+        game_state.player_turn = 'white'
+        game_state.fullmove += 1
+
+    elif game_state.player_turn == 'white':
+        game_state.player_turn = 'black'
+
+    if capture or moved_piece.piece in (PieceType.P, PieceType.p) or promotion:
+        game_state.halfmove = 0
+    else:
+        game_state.halfmove += 1
+
+    castling_string = game_state.castling
+    if moved_piece.piece == PieceType.K:
+        castling_string = castling_string.replace('K','')
+        castling_string = castling_string.replace('Q','')
+    if moved_piece.piece == PieceType.k:
+        castling_string = castling_string.replace('k', '')
+        castling_string = castling_string.replace('q', '')
+    if king_rook_move == True:
+        if moved_piece.color == 'white':
+            castling_string = castling_string.replace('K','')
+        else:
+            castling_string = castling_string.replace('k')
+    if queen_rook_move == True:
+        if moved_piece.color == 'white':
+            castling_string = castling_string.replace('Q', '')
+        else:
+            castling_string = castling_string.replace('q', '')
+    if king_rook_capture == True:
+        if moved_piece.color == 'white':
+            castling_string = castling_string.replace('k', '')
+        else:
+            castling_string = castling_string.replace('K', '')
+    if queen_rook_capture == True:
+        if moved_piece.color == 'white':
+            castling_string = castling_string.replace('q', '')
+        else:
+            castling_string = castling_string.replace('Q', '')
+
+    game_state.castling = castling_string
+    return game_state, position_list
 
 '''
 def move_fen(game_state, piece_list, algebraic):
