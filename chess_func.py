@@ -391,6 +391,7 @@ def algebraic_to_move(algebraic, game_state, position_list):
                     target_piece = PieceType[algebraic[0].upper()]
                 else:
                     target_piece = PieceType[algebraic[0].lower()]
+                count = 0
                 for p in position_list:
                     if destination in p.get_moves(game_state, position_list) and p.piece == target_piece:
                         psuedo_position = copy.deepcopy(position_list)
@@ -408,13 +409,20 @@ def algebraic_to_move(algebraic, game_state, position_list):
                                     break
                         for piece in psuedo_position:
                             if psuedo_gamestate.player_turn == piece.color:
-                                if target_location in p.get_moves(psuedo_gamestate, psuedo_position):
+                                if target_location in piece.get_moves(psuedo_gamestate, psuedo_position):
                                     move_legal = False
                                     break
                         if move_legal == True:
+                            count += 1
                             source = p.location
+                            if count > 1:
+                                raise Exception("Ambiguous move ")
             
             if len(algebraic) == 4:
+                if game_state.player_turn == 'white':
+                    target_piece = PieceType[algebraic[0].upper()]
+                else:
+                    target_piece = PieceType[algebraic[0].lower()]
                 if algebraic[1].isnumeric():
                     destination = (Files[algebraic[2]].value, int(algebraic[3]))
                     for p in position_list:
@@ -434,7 +442,7 @@ def algebraic_to_move(algebraic, game_state, position_list):
                                         break
                             for piece in psuedo_position:
                                 if psuedo_gamestate.player_turn == piece.color:
-                                    if target_location in p.get_moves(psuedo_gamestate, psuedo_position):
+                                    if target_location in piece.get_moves(psuedo_gamestate, psuedo_position):
                                         move_legal = False
                                         break
                             if move_legal == True:
@@ -442,7 +450,7 @@ def algebraic_to_move(algebraic, game_state, position_list):
                 else:
                     destination = (Files[algebraic[2]].value, int(algebraic[3]))
                     for p in position_list:
-                        if destination in p.get_moves(game_state, position_list) and p.location[1] == Files[algebraic[1]].value and p.piece == target_piece:
+                        if destination in p.get_moves(game_state, position_list) and p.location[0] == Files[algebraic[1]].value and p.piece == target_piece:
                             psuedo_position = copy.deepcopy(position_list)
                             psuedo_gamestate = copy.deepcopy(game_state)
                             psuedo_gamestate, psuedo_position = move(psuedo_gamestate, psuedo_position, p.location, destination, castling, ep, capture, promotion)
@@ -458,7 +466,7 @@ def algebraic_to_move(algebraic, game_state, position_list):
                                         break
                             for piece in psuedo_position:
                                 if psuedo_gamestate.player_turn == piece.color:
-                                    if target_location in p.get_moves(psuedo_gamestate, psuedo_position):
+                                    if target_location in piece.get_moves(psuedo_gamestate, psuedo_position):
                                         move_legal = False
                                         break
                             if move_legal == True:
