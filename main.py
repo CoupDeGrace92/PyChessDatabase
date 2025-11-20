@@ -18,14 +18,15 @@ def main():
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     clock = pygame.time.Clock()
 
-    game_data, position_list = fen_to_board_obj(DEFAULT)
     exit = False
+    current_node = PositionNode(DEFAULT)
 
     while True:
         if exit == True:
             return
 
-        game_data, position_list, exit = text_move(game_data, position_list, screen)
+
+        current_node, exit = text_move_tree(current_node, screen)
         
 
 if __name__ == "__main__":

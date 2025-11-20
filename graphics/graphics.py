@@ -4,6 +4,7 @@ from constants import *
 from chess_objects import *
 from chess_func import *
 from enum import Enum
+from data_functions import *
 
 pygame.font.init()
 
@@ -49,43 +50,7 @@ def place_pieces(screen, piece_list):
         img = pygame.image.load(filename).convert_alpha()
         img = pygame.transform.smoothscale(img, (int(SQ_SIZE*1.02), int(SQ_SIZE*1.02)))
         rect = img.get_rect(center=(pos_x, pos_y))
-        screen.blit(img, rect)
-
-def text_move(game_state, position_list, screen):
-    move_string = ''
-    error_msg = ''
-    running = True
-    exit = False
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                exit = True
-                running = False
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_RETURN:
-                    game_state, position_list, error_msg = try_apply_move(move_string, game_state, position_list)
-                    place_pieces(screen, position_list)
-                    pygame.display.flip()
-                    move_string = ''
-                    if not error_msg:
-                        error_msg = ''
-                        running = False
-                elif event.key == pygame.K_BACKSPACE:
-                    move_string = move_string[:-1]
-                else:
-                    character = event.unicode
-                    if character.isprintable():
-                        move_string += character
-
-        screen.fill((0,0,0))
-        draw_board(screen)
-        place_pieces(screen, position_list)
-        move_text = font.render(move_string, True, (WHITE))
-        error_text_box = font.render(error_msg, True, (WHITE))
-        screen.blit(move_text, (3*SCREEN_WIDTH//4, SCREEN_HEIGHT - 40))
-        screen.blit(error_text_box, (2*SCREEN_WIDTH//3, SCREEN_HEIGHT-40-error_text_box.get_height()*3))
-        pygame.display.flip()
-    return game_state, position_list, exit                
+        screen.blit(img, rect)        
 
 def try_apply_move(move_string, game_state, position_list):
     try:
@@ -104,3 +69,52 @@ def try_apply_move(move_string, game_state, position_list):
         return game_state, position_list, error_msg
 
         
+def text_move_tree(position_node, screen):
+    game_state, position_list = fen_to_board_obj(position_node.fen)
+    move_string = ''
+    error_msg = ''
+    running = True
+    exit = False
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                exit = True
+                running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    game_state, position_list, error_msg = try_apply_move(move_string, game_state, position_list)
+                    current_node = algebraic_to_new_node(move_string, position_node)
+                    place_pieces(screen, position_list)
+                    pygame.display.flip()
+                    move_string = ''
+                    if not error_msg:
+                        error_msg = ''
+                        running = False
+                elif event.key == pygame.K_BACKSPACE:
+                    move_string = move_string[:-1]
+                elif event.key == pygame.K_LEFT:
+                    if position_node.parents:
+                        current_node = position_node.parents
+                        game_state, position_list = fen_to_board_obj(current_node.fen)
+                        running = False
+                elif event.key == pygame.K_RIGHT:
+                    if position_node.children:
+                        if len(position_node.children)==1:
+                            for child in position_node.children:
+                                current_node = position_node.children[child]
+                                game_state, position_list = fen_to_board_obj(current_node.fen)
+                                running = False
+                else:
+                    character = event.unicode
+                    if character.isprintable():
+                        move_string += character
+
+        screen.fill((0,0,0))
+        draw_board(screen)
+        place_pieces(screen, position_list)
+        move_text = font.render(move_string, True, (WHITE))
+        error_text_box = font.render(error_msg, True, (WHITE))
+        screen.blit(move_text, (3*SCREEN_WIDTH//4, SCREEN_HEIGHT - 40))
+        screen.blit(error_text_box, (2*SCREEN_WIDTH//3, SCREEN_HEIGHT-40-error_text_box.get_height()*3))
+        pygame.display.flip()
+    return current_node, exit        

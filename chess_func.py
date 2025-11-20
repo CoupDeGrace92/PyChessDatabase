@@ -40,7 +40,10 @@ def fen_to_board_obj(fen):
     if fen_list[3] == '-':
         current_game.ep_square = None
     else:
-        current_game.ep_square = fen_list[3]
+        ep_square = fen_list[3]
+        file = Files[ep_square[0]].value
+        rank = int(ep_square[1])
+        current_game.ep_square = (file, rank)
     if fen_list[4]:
         current_game.halfmove = int(fen_list[4])
     if fen_list[5]:
@@ -57,7 +60,7 @@ def board_obj_to_fen(piece_list, game_state):
             x_index = j+1
             piece = next((obj for obj in piece_list if obj.location == (x_index,y_index)), None)
             if piece:
-                piece_label = piece.color + ' ' + piece.piece
+                piece_label = piece.piece.value
                 piece_name = PieceType(piece_label)
                 if empty !=0:
                     fen_string += str(empty)
@@ -79,13 +82,16 @@ def board_obj_to_fen(piece_list, game_state):
         fen_string += '-'
     fen_string += ' '
     if game_state.ep_square:
-        fen_string += game_state.ep_square
+        file = Files(game_state.ep_square[0]).name
+        rank = game_state.ep_square[1]
+        square = file+str(rank)
+        fen_string += square
     else:
         fen_string += '-'
     fen_string += ' '
-    fen_string += game_state.halfmove
+    fen_string += str(game_state.halfmove)
     fen_string += ' '
-    fen_string += game_state.fullmove
+    fen_string += str(game_state.fullmove)
     return fen_string
     
 def square_to_touple(square_string):

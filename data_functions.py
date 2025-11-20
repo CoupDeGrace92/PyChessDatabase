@@ -81,9 +81,9 @@ def generate_base_move_tree(pgn_list, fen):
 
     fen_list = []
     current_fen = fen
-    for move in pgn_list:
+    for algebraic in pgn_list:
         game_state, piece_list = fen_to_board_obj(current_fen)
-        source, destination, castling, ep, capture, promotion = algebraic_to_move(move, game_state, piece_list)
+        source, destination, castling, ep, capture, promotion = algebraic_to_move(algebraic, game_state, piece_list)
         game_state, piece_list = move(game_state, piece_list, source, destination, castling, ep, capture, promotion)
         current_fen = board_obj_to_fen(piece_list, game_state)
         fen_list.append(current_fen)
@@ -102,6 +102,28 @@ def generate_base_move_tree(pgn_list, fen):
         node = child
     node.game_end = True
     return root_node
+
+def algebraic_to_new_node(algebraic, position_node):
+    fen = position_node.fen
+    game_state, piece_list = fen_to_board_obj(fen)
+    source, destination, castling, ep, capture, promotion = algebraic_to_move(algebraic, game_state, piece_list)
+    game_state, piece_list = move(game_state, piece_list, source, destination, castling, ep, capture, promotion)
+    if piece_list !=None:
+        new_fen = board_obj_to_fen(piece_list, game_state)
+    else:
+        return position_node
+    
+    if position_node.children is None:
+        position_node.children = {}
+    
+    child = position_node.children.get(new_fen)
+    if child is None:
+        child = PositionNode(new_fen)
+        child.parents = position_node
+        position_node.children[new_fen] = child
+
+    child.count_games += 1
+    return child
 
 
 def generate_move_tree_branch(root, pgn_list):
