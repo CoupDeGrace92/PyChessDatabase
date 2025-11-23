@@ -490,3 +490,17 @@ def check_checkmate(game_state, position_list):
     if legal_moves(game_state, position_list) == []:
         return True
     return False
+
+def check_check(game_state, position_list):
+    check = False
+    for piece in position_list:
+        if piece.piece == PieceType.K and game_state.player_turn == 'black':
+            target_piece = piece
+        elif piece.piece == PieceType.k and game_state.player_turn == 'white':
+            target_piece = piece
+    for attacking_piece in position_list:
+        if attacking_piece.color != target_piece.color:
+            psuedo_moves = attacking_piece.get_moves(game_state, position_list)
+            if target_piece.location in psuedo_moves:
+                check = True
+    return check                

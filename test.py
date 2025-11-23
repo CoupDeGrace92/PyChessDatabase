@@ -31,6 +31,7 @@ def main():
 
 
         current_node, exit = text_move_tree(current_node, screen)
+
         
 
 if __name__ == "__main__":

@@ -11,8 +11,8 @@ pygame.init()
 info_object = pygame.display.Info()
 width = info_object.current_w
 height = info_object.current_h
-sq_width = width/20
-sq_height = height/10
+sq_width = width//20
+sq_height = height//10
 size = min(sq_height, sq_width)
 
 
@@ -84,6 +84,7 @@ def text_move_tree(position_node, screen):
     error_msg = ''
     running = True
     exit = False
+    current_node = position_node
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -121,9 +122,30 @@ def text_move_tree(position_node, screen):
         screen.fill((0,0,0))
         draw_board(screen)
         place_pieces(screen, position_list)
+
+        draw_move_color_square(screen, current_node)
+
         move_text = font.render(move_string, True, (WHITE))
         error_text_box = font.render(error_msg, True, (WHITE))
         screen.blit(move_text, (3*width//4, height - 2*size))
         screen.blit(error_text_box, (2*width//3, height-2*size-error_text_box.get_height()*3))
         pygame.display.flip()
-    return current_node, exit        
+    return current_node, exit
+
+def draw_move_color_square(screen, position_node):
+    fen = position_node.fen
+    game_state, position_list = fen_to_board_obj(fen)
+    player_turn = game_state.player_turn
+    color = WHITE
+    turn_sq_size = size//3
+    inner_size = turn_sq_size//8
+    if player_turn == 'white':
+        pygame.draw.rect(screen, color, (int(sq_width * 9.5), sq_height, turn_sq_size, turn_sq_size))
+    else:
+        pygame.draw.rect(screen, color, (int(sq_width*9.5), sq_height, turn_sq_size, turn_sq_size), inner_size)
+
+def display_moves(screen, move_list):
+    NotImplemented
+
+def display_candidates(screen, position_node):
+    NotImplemented
