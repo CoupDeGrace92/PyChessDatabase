@@ -122,7 +122,7 @@ def text_move_tree(position_node, screen):
         screen.fill((0,0,0))
         draw_board(screen)
         place_pieces(screen, position_list)
-
+        display_moves(screen, position_list)
         draw_move_color_square(screen, current_node)
 
         move_text = font.render(move_string, True, (WHITE))
@@ -145,7 +145,12 @@ def draw_move_color_square(screen, position_node):
         pygame.draw.rect(screen, color, (int(sq_width*9.5), sq_height, turn_sq_size, turn_sq_size), inner_size)
 
 def display_moves(screen, move_list):
-    NotImplemented
+    pygame.draw.rect(screen, WHITE, (sq_width*14, sq_height, sq_width*3, sq_height*6))
+    #pygame.draw.line(screen, color, start point, end point, width)
+    move_text = font.render('Move List', True, BLACK)
+    screen.blit(move_text, ((int((sq_width*14+sq_width*17)/2-move_text.get_width()/2), sq_height+2)))
+    pygame.draw.line(screen, BLACK,(sq_width*14, sq_height+4+move_text.get_height()),(sq_width*17, sq_height+4+move_text.get_height()),2)
+
 
 def display_candidates(screen, position_node):
     NotImplemented
