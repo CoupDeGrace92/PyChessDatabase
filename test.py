@@ -10,12 +10,16 @@ pygame.init()
 pygame.font.init()
 font = pygame.font.SysFont(None, 32)
 
+info_object = pygame.display.Info()
+screen_width = info_object.current_w
+screen_height = info_object.current_h
+
 def main():
     print("Initializing Chess Board")
-    print(f"Screen width:{SCREEN_WIDTH}")
-    print(f"Screen height:{SCREEN_HEIGHT}")
+    print(f"Screen width:{screen_width}")
+    print(f"Screen height:{screen_height}")
 
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    screen = pygame.display.set_mode((screen_width, screen_height))
     clock = pygame.time.Clock()
 
     exit = False

@@ -2,3 +2,6 @@ NOTES.md
 tasks.md
 *.venv
 example_pgn.py
+*.toml
+.python-version
+uv.lock
